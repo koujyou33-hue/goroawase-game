@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>語呂合わせ マスター 🎮 — 日本語記憶術ゲーム</title>
+  <style>
+    :root {
+      --primary: #e63946;
+      --secondary: #457b9d;
+      --accent: #f4a261;
+      --bg: #1d3557;
+      --bg2: #162a42;
+      --card: #1e3a5f;
+      --text: #f1faee;
+      --muted: #a8dadc;
+      --success: #2ec4b6;
+      --fail: #e63946;
+      --gold: #ffd166;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== PARTICLE BG ===== */
+    #particles {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      font-size: 1.4rem;
+      opacity: 0.12;
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.12; }
+      90%  { opacity: 0.12; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* ===== WRAPPER ===== */
+    #app {
+      position: relative; z-index: 1;
+      max-width: 760px; margin: 0 auto;
+      padding: 20px 16px 60px;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      text-align: center; padding: 30px 0 10px;
+    }
+    header h1 {
+      font-size: 2.4rem; font-weight: 900;
+      background: linear-gradient(135deg, var(--gold), var(--accent), var(--primary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+    }
+    header p {
+      color: var(--muted); font-size: 0.95rem; margin-top: 6px;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; animation: fadeIn .4s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== HOME ===== */
+    #home-screen { text-align: center; padding-top: 20px; }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px; margin: 30px 0;
+    }
+    .level-card {
+      background: var(--card);
+      border: 2px solid transparent;
+      border-radius: 18px;
+      padding: 28px 20px;
+      cursor: pointer;
+      transition: all .25s;
+      position: relative; overflow: hidden;
+    }
+    .level-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,.05));
+      pointer-events: none;
+    }
+    .level-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+    .level-card.lv1 { border-color: #2ec4b6; }
+    .level-card.lv2 { border-color: #f4a261; }
+    .level-card.lv3 { border-color: #e63946; }
+    .level-card.lv4 { border-color: #9b5de5; }
+    .level-card .lv-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .level-card h3 { font-size: 1.15rem; font-weight: 700; }
+    .level-card .lv-desc { font-size: 0.82rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .level-card .lv-badge {
+      display: inline-block; margin-top: 10px;
+      font-size: 0.75rem; padding: 3px 12px; border-radius: 20px;
+      background: rgba(255,255,255,.1);
+    }
+    .lv1 .lv-badge { background: rgba(46,196,182,.2); color: #2ec4b6; }
+    .lv2 .lv-badge { background: rgba(244,162,97,.2); color: #f4a261; }
+    .lv3 .lv-badge { background: rgba(230,57,70,.2); color: #e63946; }
+    .lv4 .lv-badge { background: rgba(155,93,229,.2); color: #c084fc; }
+
+    .best-scores {
+      background: var(--card); border-radius: 14px; padding: 18px 24px;
+      margin-top: 10px; text-align: left;
+    }
+    .best-scores h4 { color: var(--gold); margin-bottom: 10px; font-size: 0.9rem; }
+    .score-row {
+      display: flex; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 0.85rem; color: var(--muted);
+    }
+    .score-row span:last-child { color: var(--gold); font-weight: 700; }
+
+    /* ===== GAME SCREEN ===== */
+    .game-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .btn-back {
+      background: rgba(255,255,255,.1); border: none; border-radius: 10px;
+      color: var(--text); padding: 8px 16px; cursor: pointer;
+      font-size: 0.9rem; transition: background .2s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,.18); }
+
+    .progress-bar-wrap {
+      flex: 1; margin: 0 16px;
+    }
+    .progress-bar-track {
+      background: rgba(255,255,255,.1); border-radius: 10px; height: 8px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 10px;
+      background: linear-gradient(90deg, var(--success), var(--accent));
+      transition: width .4s ease;
+    }
+    .progress-label { font-size: 0.75rem; color: var(--muted); text-align: right; margin-top: 4px; }
+
+    .stats-row {
+      display: flex; gap: 12px; margin-bottom: 20px;
+    }
+    .stat-chip {
+      background: var(--card); border-radius: 10px;
+      padding: 8px 16px; font-size: 0.85rem;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stat-chip span { color: var(--gold); font-weight: 700; }
+
+    /* Timer */
+    #timer-ring-wrap {
+      position: relative; width: 54px; height: 54px; flex-shrink: 0;
+    }
+    #timer-ring-wrap svg { width: 54px; height: 54px; transform: rotate(-90deg); }
+    #timer-track { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 5; }
+    #timer-fill  { fill: none; stroke: var(--accent); stroke-width: 5;
+      stroke-linecap: round; transition: stroke-dashoffset .9s linear, stroke .3s; }
+    #timer-text  {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; color: var(--gold);
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--card); border-radius: 20px;
+      padding: 30px 28px; margin-bottom: 22px;
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    }
+    .q-type-badge {
+      display: inline-block; font-size: 0.72rem; padding: 3px 12px;
+      border-radius: 20px; margin-bottom: 14px; font-weight: 600;
+      background: rgba(244,162,97,.15); color: var(--accent);
+      letter-spacing: .5px;
+    }
+    .q-text {
+      font-size: 1.55rem; font-weight: 800; line-height: 1.45;
+      margin-bottom: 10px; letter-spacing: 1px;
+    }
+    .q-hint {
+      font-size: 0.88rem; color: var(--muted); line-height: 1.6;
+    }
+    .q-reading {
+      margin-top: 12px; padding: 10px 16px;
+      background: rgba(255,255,255,.06); border-radius: 10px;
+      font-size: 1.1rem; color: var(--accent); letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    /* Answer options */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px; margin-bottom: 18px;
+    }
+    .option-btn {
+      background: rgba(255,255,255,.07);
+      border: 2px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 16px 14px;
+      color: var(--text); font-size: 0.92rem;
+      cursor: pointer; text-align: left;
+      transition: all .2s; line-height: 1.5;
+      font-family: inherit;
+    }
+    .option-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,.13);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .option-btn.correct {
+      background: rgba(46,196,182,.18) !important;
+      border-color: var(--success) !important;
+      color: var(--success) !important;
+    }
+    .option-btn.wrong {
+      background: rgba(230,57,70,.18) !important;
+      border-color: var(--fail) !important;
+      color: var(--fail) !important;
+    }
+    .option-btn:disabled { cursor: default; }
+
+    /* Fill input */
+    .fill-wrap {
+      display: flex; gap: 10px; margin-bottom: 18px;
+    }
+    .fill-input {
+      flex: 1; background: rgba(255,255,255,.08);
+      border: 2px solid rgba(255,255,255,.15);
+      border-radius: 12px; padding: 14px 18px;
+      color: var(--text); font-size: 1.1rem;
+      font-family: inherit; outline: none;
+      transition: border-color .2s;
+    }
+    .fill-input:focus { border-color: var(--accent); }
+    .fill-input.correct { border-color: var(--success); background: rgba(46,196,182,.1); }
+    .fill-input.wrong   { border-color: var(--fail);    background: rgba(230,57,70,.1); }
+    .btn-submit {
+      background: var(--accent); border: none; border-radius: 12px;
+      color: var(--bg); font-size: 1rem; font-weight: 700;
+      padding: 0 22px; cursor: pointer; transition: opacity .2s;
+      font-family: inherit;
+    }
+    .btn-submit:hover { opacity: .85; }
+    .btn-submit:disabled { opacity: .4; cursor: default; }
+
+    /* Feedback */
+    .feedback-box {
+      border-radius: 14px; padding: 16px 20px;
+      margin-bottom: 16px; font-size: 0.92rem; line-height: 1.6;
+      display: none;
+    }
+    .feedback-box.show { display: block; animation: fadeIn .3s ease; }
+    .feedback-box.correct-fb { background: rgba(46,196,182,.15); border: 1px solid var(--success); }
+    .feedback-box.wrong-fb   { background: rgba(230,57,70,.15);   border: 1px solid var(--fail); }
+    .feedback-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .feedback-box.correct-fb .feedback-title { color: var(--success); }
+    .feedback-box.wrong-fb   .feedback-title { color: var(--fail); }
+
+    .btn-next {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--secondary), var(--primary));
+      border: none; border-radius: 14px;
+      color: #fff; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: opacity .2s; font-family: inherit;
+      display: none;
+    }
+    .btn-next.show { display: block; animation: fadeIn .3s ease; }
+    .btn-next:hover { opacity: .88; }
+
+    /* Combo flash */
+    .combo-flash {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+      font-size: 3rem; font-weight: 900; pointer-events: none;
+      color: var(--gold); text-shadow: 0 0 30px rgba(255,209,102,.6);
+      z-index: 999; transition: transform .2s, opacity .3s;
+    }
+    .combo-flash.show {
+      transform: translate(-50%,-50%) scale(1);
+    }
+    .combo-flash.hide {
+      transform: translate(-50%,-50%) scale(1.4);
+      opacity: 0;
+    }
+
+    /* ===== RESULT SCREEN ===== */
+    #result-screen { text-align: center; padding-top: 20px; }
+    .result-trophy { font-size: 5rem; margin: 10px 0; animation: bounce 1s ease infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+    .result-title { font-size: 2rem; font-weight: 900; margin-bottom: 6px; }
+    .result-subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 24px; }
+
+    .result-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin: 24px 0;
+    }
+    .result-stat {
+      background: var(--card); border-radius: 14px; padding: 18px 10px;
+    }
+    .result-stat .rs-val { font-size: 2rem; font-weight: 900; color: var(--gold); }
+    .result-stat .rs-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    .star-row {
+      display: flex; justify-content: center; gap: 8px; margin: 16px 0;
+      font-size: 2.2rem;
+    }
+    .star { transition: transform .3s; display: inline-block; }
+    .star.lit { animation: starPop .4s ease; }
+    @keyframes starPop {
+      0%   { transform: scale(0) rotate(-30deg); }
+      60%  { transform: scale(1.3) rotate(10deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+
+    .review-list {
+      background: var(--card); border-radius: 14px; padding: 16px;
+      text-align: left; margin: 20px 0; max-height: 260px; overflow-y: auto;
+    }
+    .review-list h4 { color: var(--gold); margin-bottom: 12px; font-size: 0.9rem; }
+    .review-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 0.83rem;
+    }
+    .review-item:last-child { border-bottom: none; }
+    .review-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+    .review-q  { font-weight: 600; color: var(--text); }
+    .review-a  { color: var(--muted); margin-top: 2px; }
+    .review-correct { color: var(--success); }
+
+    .btn-group {
+      display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;
+    }
+    .btn-group button {
+      flex: 1; padding: 14px;
+      border: none; border-radius: 12px;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: opacity .2s;
+    }
+    .btn-group button:hover { opacity: .82; }
+    .btn-retry  { background: var(--accent); color: var(--bg); }
+    .btn-home   { background: rgba(255,255,255,.12); color: var(--text); }
+    .btn-next-lv { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: #fff; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 10px; }
+
+    /* Medal */
+    .medal { display: inline-block; font-size: 1.8rem; vertical-align: middle; }
+
+    /* Tooltip */
+    .kana-tip {
+      display: inline-block; cursor: pointer;
+      background: rgba(255,255,255,.08); border-radius: 6px;
+      padding: 1px 6px; font-size: 0.85rem; color: var(--muted);
+      margin-left: 6px; transition: background .2s;
+    }
+    .kana-tip:hover { background: rgba(255,255,255,.16); }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.8rem; }
+      .options-grid { grid-template-columns: 1fr; }
+      .result-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<div id="app">
+  <header>
+    <h1>語呂合わせ マスター</h1>
+    <p>数字・歴史・理科……語呂で覚えて、日本語マスター！ 🎯</p>
+  </header>
+
+  <!-- ======= HOME SCREEN ======= -->
+  <div id="home-screen" class="screen active">
+    <div class="level-grid">
+      <div class="level-card lv1" onclick="startGame(0)">
+        <div class="lv-icon">🌸</div>
+        <h3>初級 — 数字入門</h3>
+        <div class="lv-desc">日本語の数字読みを学び、語呂合わせの基本ルールを体験しよう！</div>
+        <div class="lv-badge">かんたん</div>
+      </div>
+      <div class="level-card lv2" onclick="startGame(1)">
+        <div class="lv-icon">📅</div>
+        <h3>中級 — 歴史年号</h3>
+        <div class="lv-desc">日本史の重要な年号を語呂合わせで楽しく覚えよう！授業で実際に使われている語呂ばかり。</div>
+        <div class="lv-badge">ふつう</div>
+      </div>
+      <div class="level-card lv3" onclick="startGame(2)">
+        <div class="lv-icon">🔬</div>
+        <h3>上級 — 理科・常識</h3>
+        <div class="lv-desc">元素周期表・円周率π・光速…理科の語呂合わせに挑戦！</div>
+        <div class="lv-badge">むずかしい</div>
+      </div>
+      <div class="level-card lv4" onclick="startGame(3)">
+        <div class="lv-icon">🧠</div>
+        <h3>エキスパート — 総合挑戦</h3>
+        <div class="lv-desc">全カテゴリのミックス＋記述問題も登場！本当に覚えたか試してみよう。</div>
+        <div class="lv-badge">エキスパート</div>
+      </div>
+    </div>
+
+    <div class="best-scores">
+      <h4>🏆 ベストスコア</h4>
+      <div id="best-scores-list"></div>
+    </div>
+  </div>
+
+  <!-- ======= GAME SCREEN ======= -->
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <button class="btn-back" onclick="goHome()">← もどる</button>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="progress-label">0 / 0</div>
+      </div>
+      <div id="timer-ring-wrap">
+        <svg viewBox="0 0 54 54">
+          <circle id="timer-track" cx="27" cy="27" r="22"/>
+          <circle id="timer-fill"  cx="27" cy="27" r="22"/>
+        </svg>
+        <div id="timer-text">—</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-chip">🏅 得点 <span id="score-display">0</span></div>
+      <div class="stat-chip">✅ 正解 <span id="correct-display">0</span></div>
+      <div class="stat-chip">🔥 連続 <span id="combo-display">0</span></div>
+    </div>
+
+    <div class="question-card" id="question-card">
+      <div class="q-type-badge" id="q-type-badge">選択問題</div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-hint" id="q-hint"></div>
+      <div class="q-reading" id="q-reading" style="display:none"></div>
+    </div>
+
+    <div class="options-grid" id="options-grid"></div>
+    <div class="fill-wrap" id="fill-wrap" style="display:none">
+      <input class="fill-input" id="fill-input" placeholder="ひらがな・カタカナ・数字で入力してください" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn-submit" id="btn-submit">確認</button>
+    </div>
+
+    <div class="feedback-box" id="feedback-box">
+      <div class="feedback-title" id="feedback-title"></div>
+      <div id="feedback-body"></div>
+    </div>
+
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">次の問題 →</button>
+  </div>
+
+  <!-- ======= RESULT SCREEN ======= -->
+  <div id="result-screen" class="screen">
+    <div class="result-trophy" id="result-trophy">🏆</div>
+    <div class="result-title" id="result-title">クリア！</div>
+    <div class="result-subtitle" id="result-subtitle"></div>
+    <div class="star-row" id="star-row"></div>
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="rs-val" id="rs-score">0</div>
+        <div class="rs-label">総得点</div>
+      </div>
+      <div class="result-stat">
+        <div class="rs-val" id="rs-acc">0%</div>
+        <div class="rs-label">正解率</div>
+      </div>
+      <div class="result-stat">
+        <div class="rs-val" id="rs-time">0s</div>
+        <div class="rs-label">クリアタイム</div>
+      </div>
+    </div>
+    <div class="review-list" id="review-list">
+      <h4>📋 解答ふりかえり</h4>
+      <div id="review-items"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn-retry" onclick="retryGame()">🔄 もう一度</button>
+      <button class="btn-home"  onclick="goHome()">🏠 ホーム</button>
+      <button class="btn-next-lv" id="btn-next-lv" onclick="nextLevel()">次のレベルへ →</button>
+    </div>
+  </div>
+</div>
+
+<div class="combo-flash" id="combo-flash"></div>
+
+<script>
+// ============================================================
+//  QUESTION BANK
+// ============================================================
+const LEVELS = [
+  {
+    name: '初級 — 数字入門',
+    color: '#2ec4b6',
+    timePerQ: 20,
+    questions: [
+      {
+        type: 'choice',
+        question: '「いちご」という語呂合わせが表す数字はどれ？',
+        hint: '「いち」= 1、「ご」= 5 として組み合わせよう',
+        reading: 'いちご',
+        options: ['15', '25', '16', '51'],
+        answer: '15',
+        explanation: '「いち（1）」＋「ご（5）」＝ 15！\nイチゴ（苺）のように甘く覚えられる語呂合わせです。',
+        emoji: '🍓'
+      },
+      {
+        type: 'choice',
+        question: '「ひとよひとよにひとみごろ」が表す有名な数値はどれ？',
+        hint: '数学の授業でよく使われる語呂合わせです',
+        options: ['円周率π', '自然対数の底e', '黄金比φ', '√2（ルート2）'],
+        answer: '√2（ルート2）',
+        reading: '1.41421356…',
+        explanation: '√2 ≈ 1.41421356\nひと(1)よ(4)ひと(1)よ(4)に(2)ひと(1)みご(56)ろ\n→ 1.41421356！',
+        emoji: '📐'
+      },
+      {
+        type: 'choice',
+        question: '「なにさんざん」が表す数字の並びはどれ？',
+        hint: '「な」=7、「に」=2、「さん」=3、「ざん」=3（濁音変換あり）',
+        options: ['7233', '7133', '7333', '7234'],
+        answer: '7233',
+        reading: 'な(7)・に(2)・さん(3)・ざん(3)',
+        explanation: 'な=7、に=2、さん=3、ざん=3 → 7233\n濁音も同じ数字に読むのがポイント！',
+        emoji: '🔢'
+      },
+      {
+        type: 'choice',
+        question: '「くに（国）」を語呂合わせで読むと何番になる？',
+        hint: '「く」と「に」それぞれ数字に当てはめよう',
+        options: ['92', '29', '19', '91'],
+        answer: '92',
+        reading: 'く(9)に(2)',
+        explanation: '「く」= 9、「に」= 2 → 92！\nくに＝国、覚えやすいですね。',
+        emoji: '🗾'
+      },
+      {
+        type: 'choice',
+        question: '「ころ（頃）」の語呂合わせが表す数字はどれ？',
+        hint: '「こ」= 5、「ろ」= 6 として読もう',
+        options: ['56', '65', '36', '53'],
+        answer: '56',
+        reading: 'こ(5)ろ(6)',
+        explanation: '「こ」= 5、「ろ」= 6 → 56！\n値札や暗証番号の記憶にも使えます。',
+        emoji: '💡'
+      },
+      {
+        type: 'choice',
+        question: '「やおや（八百屋）」の語呂合わせが表す数字はどれ？',
+        hint: '「や」=8、「お」=0、「や」=8 として考えよう',
+        options: ['808', '880', '800', '088'],
+        answer: '808',
+        reading: 'や(8)お(0)や(8)',
+        explanation: '「や」=8、「お」=0、「や」=8 → 808！\n八百屋とは野菜・果物を売るお店のことです。',
+        emoji: '🥕'
+      },
+      {
+        type: 'choice',
+        question: '「0（ゼロ）」の語呂合わせ読みとして使われるのはどれ？',
+        hint: '英語の「oh」に似た音を探そう',
+        options: ['お（o）', 'し（shi）', 'な（na）', 'は（ha）'],
+        answer: 'お（o）',
+        reading: 'お = 0（まる・ゼロ）',
+        explanation: '「お」は英語の "oh" に似た発音なので、0の語呂合わせとして使われます。\n例：0120 → 「おひとにまる」',
+        emoji: '📞'
+      },
+      {
+        type: 'choice',
+        question: '「にほん（日本）」で「ほ」は語呂合わせで何番を表す？',
+        hint: '「ほ」に直接対応する数字はないが、濁音・半濁音変換を考えよう',
+        options: ['4（よ）', '1（ひ/い）', '8（は）', '5（ご）'],
+        answer: '1（ひ/い）',
+        reading: 'に(2)ほ → に(2)い(1)',
+        explanation: '「ほ」≈「ひ」≈ 1\n語呂合わせでは濁音・半濁音の変換が許されています！',
+        emoji: '🗼'
+      },
+    ]
+  },
+  {
+    name: '中級 — 歴史年号',
+    color: '#f4a261',
+    timePerQ: 25,
+    questions: [
+      {
+        type: 'choice',
+        question: '「いい国つくろう（いいくにつくろう）」は何年の出来事を覚える語呂？',
+        hint: '鎌倉幕府の成立年です',
+        reading: 'い(1)い(1)く(9)に(2)',
+        options: ['1192年', '1185年', '1200年', '1167年'],
+        answer: '1192年',
+        explanation: '1192年：源頼朝が征夷大将軍に就任 → 鎌倉幕府成立！\n「い(1)い(1)く(9)に(2)」= 1192',
+        emoji: '🏯'
+      },
+      {
+        type: 'choice',
+        question: '「いい箱つくろう（いいはこ）」はどの歴史的出来事を指す語呂？',
+        hint: '近年の教科書改訂で鎌倉幕府の成立年が変わりました',
+        reading: 'い(1)い(1)は(8)こ(5)',
+        options: ['1185年 守護・地頭設置', '1192年 鎌倉幕府', '1180年 源平合戦', '1221年 承久の乱'],
+        answer: '1185年 守護・地頭設置',
+        explanation: '近年の教科書では鎌倉幕府の成立を1185年とする説が有力！\n「い(1)い(1)は(8)こ(5)」= 1185',
+        emoji: '📦'
+      },
+      {
+        type: 'choice',
+        question: '「なんと大きな平城京（なんとおおきな）」は何の語呂合わせ？',
+        hint: '奈良時代に都が移された年です',
+        reading: 'な(7)ん(…)と(10) → 710',
+        options: ['710年 平城京遷都', '794年 平安京遷都', '645年 大化の改新', '752年 大仏開眼'],
+        answer: '710年 平城京遷都',
+        explanation: '「な(7)んと(10)」→ 710年！\n710年に都が奈良の平城京へ移されました。',
+        emoji: '🦌'
+      },
+      {
+        type: 'choice',
+        question: '「鳴くよ（なくよ）ウグイス平安京」の語呂合わせは何年？',
+        hint: '桓武天皇が都を移した年です',
+        reading: 'な(7)く(9)よ(4)',
+        options: ['794年', '784年', '710年', '800年'],
+        answer: '794年',
+        explanation: '「な(7)く(9)よ(4)」= 794年！\n桓武天皇が平安京（現在の京都）に遷都しました。',
+        emoji: '🌸'
+      },
+      {
+        type: 'choice',
+        question: '「むさし（むさし）」の語呂合わせで覚える歴史的出来事はどれ？',
+        hint: '「む(6)さ(3)し(4)」= 634、聖徳太子に関係する年です',
+        reading: 'む(6)さ(3)し(4)',
+        options: ['634年 厩戸皇子誕生', '593年 推古天皇即位', '645年 大化の改新', '604年 十七条憲法'],
+        answer: '634年 厩戸皇子誕生',
+        explanation: '「む(6)さ(3)し(4)」= 634年！\n聖徳太子（厩戸皇子）が誕生したとされる年です。',
+        emoji: '👑'
+      },
+      {
+        type: 'choice',
+        question: '「ひとむりなし」の語呂合わせが覚える年号はどれ？',
+        hint: '「ひ(1)と(6)む(6)り(…)な(7)し(4)」→ 明治時代に関係します',
+        reading: 'ひ(1)と(6)む(6)なし → 1868',
+        options: ['1868年 明治維新', '1869年 版籍奉還', '1871年 廃藩置県', '1853年 黒船来航'],
+        answer: '1868年 明治維新',
+        explanation: '「ひ(1)と(6)む(6)なし(4)」のような語呂で1868年を覚えます！\n明治維新元年、近代日本のはじまりです。',
+        emoji: '⚔️'
+      },
+      {
+        type: 'choice',
+        question: '「ひとむな（人胸）」の語呂合わせで覚える江戸幕府成立の年は？',
+        hint: '徳川家康が征夷大将軍になった年です',
+        reading: 'ひ(1)と(6)む(0)な(3)',
+        options: ['1603年', '1615年', '1600年', '1590年'],
+        answer: '1603年',
+        explanation: '「ひ(1)と(6)む(0)な(3)」→ 1603年！\n徳川家康が征夷大将軍となり、江戸幕府を開きました。',
+        emoji: '🏰'
+      },
+      {
+        type: 'choice',
+        question: '「ひごよさん」の語呂合わせはどの歴史的出来事に使われる？',
+        hint: '「ひ(1)ご(5)よ(4)さん(3)」= 1543、南蛮渡来のあの武器…',
+        reading: 'ひ(1)ご(5)よ(4)さん(3)',
+        options: ['1492年 コロンブス新大陸到達', '1600年 関ヶ原の戦い', '1543年 鉄砲伝来', '1549年 キリスト教伝来'],
+        answer: '1543年 鉄砲伝来',
+        explanation: '「ひ(1)ご(5)よ(4)さん(3)」= 1543年！\nポルトガル人によって種子島に鉄砲が伝来しました。',
+        emoji: '🔫'
+      },
+    ]
+  },
+  {
+    name: '上級 — 理科・常識',
+    color: '#e63946',
+    timePerQ: 30,
+    questions: [
+      {
+        type: 'choice',
+        question: '元素周期表の語呂合わせ「水兵リーベ僕の船」で、2番目の元素は？',
+        hint: '「水(H)兵(?)リ(Li)ー(Be)ベ(B)僕(C)の(N)船(O)…」',
+        reading: 'H He Li Be B C N O F Ne',
+        options: ['ヘリウム(He)', 'リチウム(Li)', '酸素(O)', '窒素(N)'],
+        answer: 'ヘリウム(He)',
+        explanation: '「水(H)兵(He)リ(Li)ー(Be)ベ(B)僕(C)の(N)船(O)…」\n「兵」= He = ヘリウム！',
+        emoji: '⚗️'
+      },
+      {
+        type: 'choice',
+        question: '「水兵リーベ僕の船」の語呂合わせで「僕」が表す元素はどれ？',
+        hint: '水(H)・兵(He)・リ(Li)・ー(Be)・ベ(B)・僕(?)の順番に注目',
+        reading: 'す(H)い(He)へ(Li)い(Be)り(B)→べ(C?)ぼ(N?)…順番に注意！',
+        options: ['炭素(C)', '窒素(N)', 'フッ素(F)', 'ホウ素(B)'],
+        answer: '炭素(C)',
+        explanation: '水(H)-兵(He)-リ(Li)-ー(Be)-ベ(B)-僕(C)-の(N)-船(O)…\n「僕」= C = 炭素（6番）！',
+        emoji: '💎'
+      },
+      {
+        type: 'choice',
+        question: '「ナトリウムから始まる」第3周期の元素を覚える語呂合わせはどれ？',
+        hint: '「な(Na)ま(Mg)あ(Al)る(Si)し(P)い(S)くら(Cl)あ(Ar)」',
+        reading: 'な(Na)ま(Mg)あ(Al)る(Si)し(P)い(S)くら(Cl)あ(Ar)',
+        options: ['第3周期元素：Na Mg Al Si P S Cl Ar', '第2周期元素：Li Be B C N O F Ne', '遷移元素の原子番号列', '希ガス元素'],
+        answer: '第3周期元素：Na Mg Al Si P S Cl Ar',
+        explanation: '「な(Na)ま(Mg)あ(Al)る(Si)し(P)い(S)くら(Cl)あ(Ar)」\n第3周期：原子番号11(Na)～18(Ar)！',
+        emoji: '🧪'
+      },
+      {
+        type: 'choice',
+        question: 'π（円周率）の「3.141592…」を覚える有名な語呂合わせはどれ？',
+        hint: '日本の理科・数学の授業で最もよく使われる語呂です',
+        reading: '3.141592',
+        options: [
+          '産（3）医（1）師（4）異（1）国（9）に（2）向（6）かう',
+          '三（3）角（1）形（4）の（1）面積（5）求（9）めよ（2）',
+          '山（3）頂（1）より（4）富士（1）山（5）見（9）える（2）',
+          'さん（3）いち（1）し（4）いち（1）ごに（52）'
+        ],
+        answer: '産（3）医（1）師（4）異（1）国（9）に（2）向（6）かう',
+        explanation: 'π = 3.14159265…\n「産(3)医(1)師(4)異(1)国(9)に(2)向(6)かう…」\nお医者さんが異国へ向かうストーリーで覚えよう！',
+        emoji: '🥧'
+      },
+      {
+        type: 'choice',
+        question: '光速の語呂合わせ「にくくなくにく」は何の数値を表す？',
+        hint: '「に(2)く(9)く(9)な(7)く(9)に(2)」→ 光速に関係する数字の並び',
+        reading: 'に(2)く(9)く(9)な(7)く(9)に(2) → 299792',
+        options: ['光速の先頭6桁：299792（km/s）', '電子の質量', '重力加速度 9.8', '音速 340（m/s）'],
+        answer: '光速の先頭6桁：299792（km/s）',
+        explanation: '光速 ≈ 299,792 km/s\n「に(2)く(9)く(9)な(7)く(9)に(2)」→ 299792！\n肉食べてもなく？ユニークな語呂ですね。',
+        emoji: '💫'
+      },
+      {
+        type: 'choice',
+        question: '「富士山麓（ふじさんろく）オーム鳴く」の語呂合わせが表す値は？',
+        hint: '「ふ(2)じ(3)さ(3)ん(…)ろ(6)く(0)」の数字の並びを考えよう',
+        reading: 'ふ(2)じ(3)さ(3)んろ(6)く(0) → 2.3360…',
+        options: ['√5 = 2.2360679', '√3 = 1.7320508', '√2 = 1.4142135', '√6 = 2.4494897'],
+        answer: '√5 = 2.2360679',
+        explanation: '「ふ(2)じ(3)さ(3)ん(0)ろ(6)く(7)な(9)く」→ 2.2360679\n= √5！富士山麓でオームが鳴く情景を想像しよう。',
+        emoji: '🗻'
+      },
+      {
+        type: 'choice',
+        question: '元素カルシウム(Ca)の原子番号はいくつ？',
+        hint: '周期表の第4周期、アルカリ土類金属の最初の元素です',
+        reading: '周期表の位置：第4周期・第2族',
+        options: ['20番', '12番', '19番', '30番'],
+        answer: '20番',
+        explanation: 'Ca = カルシウム = 20番！\n骨や歯の主成分で、「にじゅう（20）」と覚えよう。\n牛乳カルシウム → ２０！',
+        emoji: '🦷'
+      },
+      {
+        type: 'choice',
+        question: '「水兵リーベ」の語呂で「H（水素）= 1」の次の原子番号が大きい元素は？',
+        hint: 'H=1 の次は…「水兵」の「兵」を思い出そう',
+        reading: '水(H=1) → 兵(?)= 2',
+        options: ['He（ヘリウム）= 2', 'Li（リチウム）= 3', 'C（炭素）= 6', 'N（窒素）= 7'],
+        answer: 'He（ヘリウム）= 2',
+        explanation: 'H=1 → He=2\n「水兵」の「兵」= ヘリウム！\n風船に使われる軽い気体です。🎈',
+        emoji: '🎈'
+      }
+    ]
+  },
+  {
+    name: 'エキスパート — 総合挑戦',
+    color: '#9b5de5',
+    timePerQ: 22,
+    questions: [] // 動的に生成
+  }
+];
+
+// Build expert level from all previous
+function buildExpertLevel() {
+  const pool = [];
+  for (let i = 0; i < 3; i++) {
+    LEVELS[i].questions.forEach(q => pool.push({ ...q, _from: i }));
+  }
+  // shuffle & pick 10
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = pool.slice(0, 10);
+  // Convert some to fill type
+  picked.forEach((q, idx) => {
+    if (idx % 3 === 2 && q.type === 'choice') {
+      q.type = 'fill';
+    }
+  });
+  LEVELS[3].questions = picked;
+}
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+let state = {
+  levelIdx: 0,
+  qIdx: 0,
+  questions: [],
+  score: 0,
+  correct: 0,
+  combo: 0,
+  maxCombo: 0,
+  answered: false,
+  timer: null,
+  timeLeft: 0,
+  totalTime: 0,
+  startTime: 0,
+  results: []
+};
+
+// ============================================================
+//  BEST SCORES
+// ============================================================
+function getBestScores() {
+  try { return JSON.parse(localStorage.getItem('goroawase_best') || '{}'); }
+  catch { return {}; }
+}
+function saveBestScore(levelIdx, score) {
+  const best = getBestScores();
+  const key = 'lv' + levelIdx;
+  if (!best[key] || score > best[key]) { best[key] = score; }
+  localStorage.setItem('goroawase_best', JSON.stringify(best));
+}
+function renderBestScores() {
+  const best = getBestScores();
+  const names = ['初級', '中級', '上級', 'エキスパート'];
+  const el = document.getElementById('best-scores-list');
+  el.innerHTML = names.map((n, i) => {
+    const s = best['lv' + i];
+    return `<div class="score-row"><span>${n}</span><span>${s ? s + ' pts' : 'まだ未挑戦'}</span></div>`;
+  }).join('');
+}
+
+// ============================================================
+//  PARTICLES
+// ============================================================
+(function createParticles() {
+  const chars = ['あ','い','う','え','お','か','き','く','け','こ','1','2','3','4','5','6','7','8','9','0','語','呂','合','わ','せ','✨','🌸','⭐'];
+  const wrap = document.getElementById('particles');
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = chars[Math.floor(Math.random() * chars.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDuration = (8 + Math.random() * 14) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    wrap.appendChild(p);
+  }
+})();
+
+// ============================================================
+//  SCREEN NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome() {
+  clearTimer();
+  showScreen('home-screen');
+  renderBestScores();
+}
+
+// ============================================================
+//  START GAME
+// ============================================================
+function startGame(levelIdx) {
+  if (levelIdx === 3) buildExpertLevel();
+  state.levelIdx = levelIdx;
+  state.questions = [...LEVELS[levelIdx].questions];
+  // shuffle
+  for (let i = state.questions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.questions[i], state.questions[j]] = [state.questions[j], state.questions[i]];
+  }
+  state.qIdx = 0;
+  state.score = 0;
+  state.correct = 0;
+  state.combo = 0;
+  state.maxCombo = 0;
+  state.results = [];
+  state.startTime = Date.now();
+  showScreen('game-screen');
+  renderQuestion();
+}
+
+function retryGame() { startGame(state.levelIdx); }
+function nextLevel() {
+  const next = (state.levelIdx + 1) % LEVELS.length;
+  startGame(next);
+}
+
+// ============================================================
+//  RENDER QUESTION
+// ============================================================
+function renderQuestion() {
+  const q = state.questions[state.qIdx];
+  const total = state.questions.length;
+  state.answered = false;
+
+  // Progress
+  document.getElementById('progress-fill').style.width = (state.qIdx / total * 100) + '%';
+  document.getElementById('progress-label').textContent = `${state.qIdx} / ${total}`;
+
+  // Stats
+  document.getElementById('score-display').textContent = state.score;
+  document.getElementById('correct-display').textContent = state.correct;
+  document.getElementById('combo-display').textContent = state.combo;
+
+  // Question card
+  document.getElementById('q-type-badge').textContent = q.type === 'fill' ? '✏️ 記述問題' : '🔘 選択問題';
+  document.getElementById('q-text').innerHTML = (q.emoji ? q.emoji + ' ' : '') + q.question;
+  document.getElementById('q-hint').textContent = q.hint || '';
+
+  const readingEl = document.getElementById('q-reading');
+  if (q.reading) {
+    readingEl.textContent = '読み方ヒント：' + q.reading;
+    readingEl.style.display = 'block';
+  } else {
+    readingEl.style.display = 'none';
+  }
+
+  // Clear feedback
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box';
+  const btnNext = document.getElementById('btn-next');
+  btnNext.className = 'btn-next';
+
+  // Render input area
+  const optGrid = document.getElementById('options-grid');
+  const fillWrap = document.getElementById('fill-wrap');
+
+  if (q.type === 'choice') {
+    optGrid.style.display = 'grid';
+    fillWrap.style.display = 'none';
+    const shuffledOpts = [...q.options].sort(() => Math.random() - .5);
+    optGrid.innerHTML = shuffledOpts.map(opt =>
+      `<button class="option-btn" onclick="answerChoice(this,'${escStr(opt)}','${escStr(q.answer)}')">${opt}</button>`
+    ).join('');
+  } else {
+    optGrid.style.display = 'none';
+    fillWrap.style.display = 'flex';
+    const input = document.getElementById('fill-input');
+    input.value = '';
+    input.className = 'fill-input';
+    input.disabled = false;
+    document.getElementById('btn-submit').disabled = false;
+    setTimeout(() => input.focus(), 100);
+  }
+
+  // Timer
+  const timeLimit = LEVELS[state.levelIdx].timePerQ;
+  startTimer(timeLimit);
+}
+
+function escStr(s) {
+  return s.replace(/'/g, "\\'").replace(/\n/g, ' ');
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+const CIRC = 2 * Math.PI * 22; // r=22
+document.getElementById('timer-fill').style.strokeDasharray = CIRC;
+document.getElementById('timer-fill').style.strokeDashoffset = 0;
+
+function startTimer(seconds) {
+  clearTimer();
+  state.timeLeft = seconds;
+  state.totalTime = seconds;
+  updateTimerUI(seconds, seconds);
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerUI(state.timeLeft, seconds);
+    if (state.timeLeft <= 0) {
+      clearTimer();
+      timeOut();
+    }
+  }, 1000);
+}
+function clearTimer() {
+  if (state.timer) { clearInterval(state.timer); state.timer = null; }
+}
+function updateTimerUI(left, total) {
+  document.getElementById('timer-text').textContent = left;
+  const ratio = left / total;
+  const offset = CIRC * (1 - ratio);
+  const fill = document.getElementById('timer-fill');
+  fill.style.strokeDashoffset = offset;
+  fill.style.stroke = ratio > .5 ? '#f4a261' : ratio > .25 ? '#e6b225' : '#e63946';
+}
+function timeOut() {
+  if (state.answered) return;
+  state.answered = true;
+  state.combo = 0;
+  document.getElementById('combo-display').textContent = 0;
+  const q = state.questions[state.qIdx];
+  showFeedback(false, q, true);
+  disableOptions();
+  state.results.push({ q, correct: false, timeout: true });
+  document.getElementById('btn-next').className = 'btn-next show';
+}
+
+// ============================================================
+//  ANSWER LOGIC
+// ============================================================
+function answerChoice(btn, chosen, correct) {
+  if (state.answered) return;
+  clearTimer();
+  state.answered = true;
+  const isCorrect = chosen === correct;
+  const q = state.questions[state.qIdx];
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    const bVal = b.textContent.trim();
+    if (bVal === correct) b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+  });
+
+  handleResult(isCorrect, q);
+}
+
+document.getElementById('btn-submit').addEventListener('click', submitFill);
+document.getElementById('fill-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitFill();
+});
+
+function submitFill() {
+  if (state.answered) return;
+  const input = document.getElementById('fill-input');
+  const val = input.value.trim();
+  if (!val) return;
+  clearTimer();
+  state.answered = true;
+  const q = state.questions[state.qIdx];
+
+  // Flexible matching
+  const normalize = s => s.replace(/[^\wぁ-ん\u30A0-\u30FFa-zA-Z0-9]/g, '').toLowerCase();
+  const isCorrect = normalize(val) === normalize(q.answer) ||
+    q.answer.includes(val) ||
+    val.includes(q.answer.split(' ')[0]);
+
+  input.className = 'fill-input ' + (isCorrect ? 'correct' : 'wrong');
+  input.disabled = true;
+  document.getElementById('btn-submit').disabled = true;
+
+  handleResult(isCorrect, q);
+}
+
+function handleResult(isCorrect, q) {
+  if (isCorrect) {
+    state.correct++;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+    const timeBonus = Math.floor(state.timeLeft * 2);
+    const comboBonus = Math.min(state.combo * 10, 100);
+    const pts = 100 + timeBonus + comboBonus;
+    state.score += pts;
+    document.getElementById('score-display').textContent = state.score;
+    document.getElementById('correct-display').textContent = state.correct;
+    document.getElementById('combo-display').textContent = state.combo;
+    if (state.combo >= 3) showComboFlash(state.combo);
+    state.results.push({ q, correct: true, pts });
+  } else {
+    state.combo = 0;
+    document.getElementById('combo-display').textContent = 0;
+    state.results.push({ q, correct: false });
+  }
+  showFeedback(isCorrect, q, false);
+  document.getElementById('btn-next').className = 'btn-next show';
+}
+
+function disableOptions() {
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    const q = state.questions[state.qIdx];
+    if (b.textContent.trim() === q.answer) b.classList.add('correct');
+  });
+  const input = document.getElementById('fill-input');
+  if (input) { input.disabled = true; }
+  document.getElementById('btn-submit').disabled = true;
+}
+
+// ============================================================
+//  FEEDBACK
+// ============================================================
+function showFeedback(isCorrect, q, timeout) {
+  const fb = document.getElementById('feedback-box');
+  const title = document.getElementById('feedback-title');
+  const body = document.getElementById('feedback-body');
+
+  if (timeout) {
+    fb.className = 'feedback-box wrong-fb show';
+    title.textContent = '⏰ 時間切れ！';
+    body.innerHTML = `<b>正解：</b>${q.answer}<br><br>${q.explanation ? q.explanation.replace(/\n/g,'<br>') : ''}`;
+  } else if (isCorrect) {
+    const phrases = ['すごい！✨','正解！🎉','完璧！💯','素晴らしい！🌟','やった！🥳'];
+    fb.className = 'feedback-box correct-fb show';
+    title.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+    body.innerHTML = q.explanation ? q.explanation.replace(/\n/g,'<br>') : '正解です！おめでとう！';
+  } else {
+    fb.className = 'feedback-box wrong-fb show';
+    title.textContent = '残念… 💡 解説を確認しよう！';
+    body.innerHTML = `<b>正解：</b>${q.answer}<br><br>${q.explanation ? q.explanation.replace(/\n/g,'<br>') : ''}`;
+  }
+}
+
+// ============================================================
+//  COMBO FLASH
+// ============================================================
+function showComboFlash(n) {
+  const el = document.getElementById('combo-flash');
+  const msgs = { 3:'🔥 3連続！', 4:'💥 4連続！！', 5:'⚡ 5連続！！！', 6:'🌟 すごすぎる！！', 7:'👑 語呂マスター！！' };
+  el.textContent = msgs[n] || `🔥 ${n}連続！！！`;
+  el.className = 'combo-flash show';
+  setTimeout(() => {
+    el.className = 'combo-flash hide';
+    setTimeout(() => { el.className = 'combo-flash'; }, 350);
+  }, 900);
+}
+
+// ============================================================
+//  NEXT QUESTION / RESULT
+// ============================================================
+function nextQuestion() {
+  state.qIdx++;
+  if (state.qIdx >= state.questions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ============================================================
+//  RESULT SCREEN
+// ============================================================
+function showResult() {
+  const total = state.questions.length;
+  const acc = Math.round(state.correct / total * 100);
+  const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+  saveBestScore(state.levelIdx, state.score);
+
+  showScreen('result-screen');
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-label').textContent = `${total} / ${total}`;
+
+  // Trophy
+  const trophies = ['🥉','🥈','🥇','🏆'];
+  const starCount = acc >= 90 ? 3 : acc >= 60 ? 2 : 1;
+  document.getElementById('result-trophy').textContent = acc >= 90 ? '🏆' : acc >= 60 ? '🥈' : '🥉';
+  document.getElementById('result-title').textContent = acc >= 90 ? '完璧クリア！🎊' : acc >= 60 ? 'よくできました！👏' : 'もう少し頑張ろう！💪';
+  document.getElementById('result-subtitle').textContent =
+    `${LEVELS[state.levelIdx].name} — 最高コンボ：${state.maxCombo}回`;
+
+  // Stars
+  const starRow = document.getElementById('star-row');
+  starRow.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const s = document.createElement('span');
+    s.className = 'star' + (i < starCount ? ' lit' : '');
+    s.textContent = i < starCount ? '⭐' : '☆';
+    s.style.animationDelay = (i * 200) + 'ms';
+    starRow.appendChild(s);
+  }
+
+  // Stats
+  document.getElementById('rs-score').textContent = state.score;
+  document.getElementById('rs-acc').textContent = acc + '%';
+  document.getElementById('rs-time').textContent = elapsed + 's';
+
+  // Review
+  const reviewEl = document.getElementById('review-items');
+  reviewEl.innerHTML = state.results.map(r => `
+    <div class="review-item">
+      <div class="review-icon">${r.correct ? '✅' : '❌'}</div>
+      <div>
+        <div class="review-q">${r.q.emoji || ''} ${r.q.question.slice(0,40)}${r.q.question.length>40?'…':''}</div>
+        <div class="review-a ${r.correct?'review-correct':''}">
+          ${r.correct ? '✓ 正解' + (r.pts?` (+${r.pts}pts)`:'') : '✗ 不正解：' + r.q.answer}
+          ${r.timeout ? ' ⏰ 時間切れ' : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Next level button
+  const hasNext = state.levelIdx < LEVELS.length - 1;
+  document.getElementById('btn-next-lv').style.display = hasNext ? '' : 'none';
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+renderBestScores();
+</script>
+</body>
+</html>
